@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pulse Search Engine</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 600px;
+      margin: 3em auto 0 auto;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 8px 32px rgba(60,72,88,0.1);
+      padding: 2em 2em 3em 2em;
+      animation: fadein 1s;
+    }
+    @keyframes fadein {
+      from { opacity: 0; transform: translateY(40px);}
+      to { opacity: 1; transform: none;}
+    }
+    .brand {
+      text-align: center;
+      font-weight: 700;
+      font-size: 2.1em;
+      letter-spacing: -1px;
+      margin-bottom: 0.5em;
+      background: linear-gradient(90deg,#0ea5e9,#7c3aed);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 2em;
+      margin-bottom: 2em;
+    }
+    .tab {
+      padding: 0.5em 1.2em;
+      border-radius: 7px 7px 0 0;
+      font-weight: 600;
+      color: #888;
+      background: #f1f5f9;
+      border: none;
+      cursor: pointer;
+      font-size: 1.06em;
+      transition: background .18s, color .18s;
+      outline: none;
+    }
+    .tab.active, .tab:hover {
+      background: linear-gradient(90deg,#0ea5e9,#7c3aed);
+      color: #fff;
+    }
+    .search-bar {
+      display: flex;
+      gap: 0.6em;
+      margin-bottom: 2em;
+    }
+    #searchBox {
+      flex: 1;
+      font-size: 1.1em;
+      padding: 0.7em 1em;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      outline: none;
+      transition: border .2s;
+    }
+    #searchBox:focus {
+      border-color: #7c3aed;
+    }
+    button {
+      background: linear-gradient(90deg,#0ea5e9,#7c3aed);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75em 1.5em;
+      font-size: 1.1em;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 1px 5px rgba(124,60,237,0.08);
+      transition: background .15s;
+    }
+    button:hover {
+      background: linear-gradient(90deg,#2563eb,#7c3aed);
+    }
+    #results {
+      margin-top: 1.5em;
+    }
+    .result {
+      background: #f3f4f6;
+      border-radius: 12px;
+      padding: 1.1em 1em 1em 1em;
+      margin-bottom: 1em;
+      box-shadow: 0 2px 10px rgba(60,72,88,0.04);
+      animation: fadein 0.7s;
+    }
+    .result-title {
+      font-weight: 600;
+      font-size: 1.13em;
+      margin-bottom: 0.2em;
+    }
+    .result-link {
+      color: #6366f1;
+      text-decoration: none;
+      cursor: pointer;
+      word-break: break-all;
+      transition: color .12s;
+    }
+    .result-link:hover {
+      color: #0ea5e9;
+      text-decoration: underline;
+    }
+    #warning {
+      display: none;
+      background: #ffe6e6;
+      color: #ba1b1b;
+      border: 1.5px solid #ba1b1b;
+      border-radius: 9px;
+      font-size: 1.07em;
+      padding: 1em 1.2em;
+      margin: 2em 0 0 0;
+      animation: fadein 0.4s;
+      text-align: center;
+      font-weight: 600;
+    }
+    #about {
+      display: none;
+      font-size: 1.1em;
+      background: #f9fafb;
+      border-radius: 9px;
+      padding: 1.4em 1em 1em 1em;
+      margin-top: 1.3em;
+      color: #374151;
+      box-shadow: 0 2px 10px rgba(60,72,88,0.03);
+    }
+    @media (max-width: 700px) {
+      .container {padding: 1em;}
+      .brand {font-size: 1.4em;}
+      #searchBox, button {font-size: 1em;}
+      .tabs {gap: 0.5em;}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="brand">Pulse</div>
+    <div class="tabs">
+      <button class="tab active" id="tab-search" onclick="switchTab('search')">Search</button>
+      <button class="tab" id="tab-pulse" onclick="switchTab('pulse')">Pulse</button>
+      <button class="tab" id="tab-about" onclick="switchTab('about')">About</button>
+    </div>
+    <div id="search-section">
+      <div class="search-bar">
+        <input id="searchBox" type="text" placeholder="Type a search query or pulse:// and hit Enter..." autofocus>
+        <button onclick="search()">Search</button>
+      </div>
+      <div id="results"></div>
+      <div id="warning"></div>
+    </div>
+    <div id="pulse-section" style="display:none;">
+      <div id="pulse-results" style="margin-top:2em;"></div>
+    </div>
+    <div id="about">
+      <b>Pulse</b> is a modern in-browser search engine demo.
+      <ul>
+        <li>Perform web lookups (via DuckDuckGo API)</li>
+        <li>Try "pulse://" links to demo the custom protocol</li>
+        <li>Blocked domains are filtered for safety</li>
+      </ul>
+    </div>
+  </div>
+  <script>
+    // Blocked domains are base64-encoded and decoded at runtime
+    function getBlockedDomains() {
+      const encoded = [
+        "ZXhhbXBsZS1pbGxlZ2FsLmNvbQ==",
+        "YmFkc2l0ZS5uZXQ=",
+        "cG9ybmh1Yi5jb20=",
+        "eHZpZGVvcy5jb20=",
+        "aWxsZWdhbC1zaXRlLm9yZw=="
+      ];
+      return encoded.map(b64 => atob(b64));
+    }
+    const blockedDomains = getBlockedDomains();
+
+    // Tabs logic
+    function switchTab(tab) {
+      document.getElementById('tab-search').classList.remove('active');
+      document.getElementById('tab-pulse').classList.remove('active');
+      document.getElementById('tab-about').classList.remove('active');
+      document.getElementById('search-section').style.display = 'none';
+      document.getElementById('pulse-section').style.display = 'none';
+      document.getElementById('about').style.display = 'none';
+
+      if (tab === 'search') {
+        document.getElementById('tab-search').classList.add('active');
+        document.getElementById('search-section').style.display = '';
+        document.getElementById('searchBox').focus();
+      } else if (tab === 'pulse') {
+        document.getElementById('tab-pulse').classList.add('active');
+        document.getElementById('pulse-section').style.display = '';
+        document.getElementById('pulse-results').innerHTML =
+          "<div style='color:#7c3aed;font-size:1.1em;'>Welcome to Pulse Protocol!</div><div style='margin-top:1em;'>Type <b>pulse://something</b> in the search box and you'll see it parsed here.</div>";
+      } else if (tab === 'about') {
+        document.getElementById('tab-about').classList.add('active');
+        document.getElementById('about').style.display = '';
+      }
+    }
+
+    document.getElementById('searchBox').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') search();
+    });
+
+    function search() {
+      const query = document.getElementById('searchBox').value.trim();
+      document.getElementById('warning').style.display = 'none';
+      if (!query) return;
+
+      // Custom protocol: pulse://
+      if (query.startsWith('pulse://')) {
+        switchTab('pulse');
+        document.getElementById('pulse-results').innerHTML =
+          "<div style='color:#7c3aed;font-weight:600;'>Pulse Protocol Detected</div>" +
+          "<div style='margin-top:0.6em;font-size:1.08em;'><b>Request:</b> " + escapeHTML(query) + "</div>";
+        return;
+      } else {
+        switchTab('search');
+      }
+
+      document.getElementById('results').innerHTML = "<em>Searching...</em>";
+
+      // DuckDuckGo Instant Answer API (JSONP to bypass CORS)
+      const script = document.createElement('script');
+      const cb = 'ddgCallback_' + Math.random().toString(36).substr(2, 9);
+
+      window[cb] = function(data) {
+        delete window[cb];
+        document.body.removeChild(script);
+        renderResults(data, query);
+      };
+
+      script.src = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_redirect=1&callback=${cb}`;
+      document.body.appendChild(script);
+    }
+
+    function isBlocked(url) {
+      try {
+        const domain = (new URL(url)).hostname.replace(/^www\./, '');
+        return blockedDomains.some(bad => domain.endsWith(bad));
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function handleLinkClick(e, url) {
+      e.preventDefault();
+      if (isBlocked(url)) {
+        document.getElementById('warning').textContent =
+          "Hey! This has been marked as an illegal or mature site. You won't be able to access this site with us.";
+        document.getElementById('warning').style.display = 'block';
+      } else {
+        window.open(url, '_blank');
+      }
+    }
+
+    function renderResults(data, query) {
+      let html = "";
+      if (data.AbstractURL) {
+        html += `<div class="result">
+          <div class="result-title"><a href="${data.AbstractURL}" class="result-link" onclick="handleLinkClick(event, '${data.AbstractURL}')">${escapeHTML(data.Heading || data.AbstractURL)}</a></div>
+          <div>${escapeHTML(data.AbstractText || "")}</div>
+        </div>`;
+      }
+      if (data.RelatedTopics && data.RelatedTopics.length > 0) {
+        html += "<h3 style='margin:1.5em 0 0.5em 0;color:#7c3aed;'>Related Topics</h3>";
+        data.RelatedTopics.forEach(rt => {
+          if (rt.Text && rt.FirstURL) {
+            html += `<div class="result">
+              <div class="result-title"><a href="${rt.FirstURL}" class="result-link" onclick="handleLinkClick(event, '${rt.FirstURL}')">${escapeHTML(rt.Text)}</a></div>
+            </div>`;
+          } else if (rt.Topics) {
+            rt.Topics.forEach(t => {
+              if (t.Text && t.FirstURL) {
+                html += `<div class="result">
+                  <div class="result-title"><a href="${t.FirstURL}" class="result-link" onclick="handleLinkClick(event, '${t.FirstURL}')">${escapeHTML(t.Text)}</a></div>
+                </div>`;
+              }
+            });
+          }
+        });
+      }
+      if (!html) html = "<em>No results found. (DuckDuckGo API provides instant answers and related topics, not full web results)</em>";
+      document.getElementById('results').innerHTML = html;
+    }
+
+    function escapeHTML(str) {
+      return String(str).replace(/[&<>"']/g, function(m) {
+        return ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[m];
+      });
+    }
+
+    // Expose handler for HTML onclick
+    window.handleLinkClick = handleLinkClick;
+  </script>
+</body>
+</html>
